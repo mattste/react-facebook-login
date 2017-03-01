@@ -158,7 +158,7 @@ class FacebookLogin extends React.Component {
       return;
     }
     this.setState({ isProcessing: true });
-    const { scope, appId, onClick, reAuthenticate, redirectUri, disableMobileRedirect } = this.props;
+    const { scope, appId, onClick, reAuthenticate, redirectUri, disableMobileRedirect, responseType } = this.props;
 
     if (typeof onClick === 'function') {
       onClick();
