@@ -26,6 +26,7 @@ class FacebookLogin extends React.Component {
     reAuthenticate: PropTypes.bool,
     scope: PropTypes.string,
     redirectUri: PropTypes.string,
+    responseType: PropTypes.string,
     textButton: PropTypes.string,
     typeButton: PropTypes.string,
     autoLoad: PropTypes.bool,
@@ -48,6 +49,7 @@ class FacebookLogin extends React.Component {
     typeButton: 'button',
     redirectUri: typeof window !== 'undefined' ? window.location.href : '/',
     scope: 'public_profile,email',
+    responseType: 'code',
     xfbml: false,
     cookie: false,
     reAuthenticate: false,
@@ -167,6 +169,7 @@ class FacebookLogin extends React.Component {
       redirect_uri: redirectUri,
       state: 'facebookdirect',
       scope,
+      response_type: responseType
     };
 
     if (reAuthenticate) {
