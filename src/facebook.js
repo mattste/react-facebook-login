@@ -7,7 +7,9 @@ const getIsMobile = () => {
   let isMobile = false;
 
   try {
-    isMobile = ((window.navigator && window.navigator.standalone) || navigator.userAgent.match('CriOS') || navigator.userAgent.match(/mobile/i));
+    const userAgent = window.navigator && window.navigator.userAgent;
+    const isMobileUserAgent = userAgent.match(/mobile/i);
+    isMobile = ((window.navigator && window.navigator.standalone) || navigator.userAgent.match('CriOS') || (isMobileUserAgent && isMobileUserAgent.length > 0));
   } catch (ex) {
     // continue regardless of error
   }
