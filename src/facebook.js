@@ -171,7 +171,7 @@ class FacebookLogin extends React.Component {
       redirect_uri: redirectUri,
       state: 'facebookdirect',
       scope,
-      response_type: responseType
+      response_type: responseType,
     };
 
     if (reAuthenticate) {
