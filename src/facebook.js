@@ -1,6 +1,5 @@
 // @flow
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { PropTypes } from 'react';
 import styles from '../styles/facebook.scss';
 import objectToParams from './objectToParams';
 
@@ -8,24 +7,15 @@ const getIsMobile = () => {
   let isMobile = false;
 
   try {
-    isMobile = !!((window.navigator && window.navigator.standalone) || navigator.userAgent.match('CriOS') || navigator.userAgent.match(/mobile/i));
+    const userAgent = window.navigator && window.navigator.userAgent;
+    const isMobileUserAgent = userAgent.match(/mobile/i);
+    isMobile = ((window.navigator && window.navigator.standalone) || navigator.userAgent.match('CriOS') || (isMobileUserAgent && isMobileUserAgent.length > 0));
   } catch (ex) {
     // continue regardless of error
   }
 
   return isMobile;
 };
-
-// https://www.w3.org/TR/html5/disabled-elements.html#disabled-elements
-const _shouldAddDisabledProp = (tag) => [
-  'button',
-  'input',
-  'select',
-  'textarea',
-  'optgroup',
-  'option',
-  'fieldset',
-].indexOf((tag + '').toLowerCase()) >= 0;
 
 class FacebookLogin extends React.Component {
 
@@ -38,6 +28,7 @@ class FacebookLogin extends React.Component {
     reAuthenticate: PropTypes.bool,
     scope: PropTypes.string,
     redirectUri: PropTypes.string,
+    responseType: PropTypes.string,
     textButton: PropTypes.string,
     typeButton: PropTypes.string,
     autoLoad: PropTypes.bool,
@@ -53,7 +44,6 @@ class FacebookLogin extends React.Component {
     containerStyle: PropTypes.object,
     buttonStyle: PropTypes.object,
     tag: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
-    onFailure: PropTypes.func,
   };
 
   static defaultProps = {
@@ -61,6 +51,7 @@ class FacebookLogin extends React.Component {
     typeButton: 'button',
     redirectUri: typeof window !== 'undefined' ? window.location.href : '/',
     scope: 'public_profile,email',
+    responseType: 'code',
     xfbml: false,
     cookie: false,
     reAuthenticate: false,
@@ -72,7 +63,6 @@ class FacebookLogin extends React.Component {
     disableMobileRedirect: false,
     isMobile: getIsMobile(),
     tag: 'button',
-    onFailure: null,
   };
 
   state = {
@@ -81,7 +71,6 @@ class FacebookLogin extends React.Component {
   };
 
   componentDidMount() {
-    this._isMounted = true;
     if (document.getElementById('facebook-jssdk')) {
       this.sdkLoaded();
       return;
@@ -94,6 +83,7 @@ class FacebookLogin extends React.Component {
       fbRoot.id = 'fb-root';
       document.body.appendChild(fbRoot);
     }
+    this._isMounted = true;
   }
 
   componentWillUnmount() {
@@ -134,13 +124,13 @@ class FacebookLogin extends React.Component {
       let js = element;
       if (d.getElementById(id)) { return; }
       js = d.createElement(s); js.id = id;
-      js.src = `https://connect.facebook.net/${language}/sdk.js`;
+      js.src = `//connect.facebook.net/${language}/all.js`;
       fjs.parentNode.insertBefore(js, fjs);
     })(document, 'script', 'facebook-jssdk');
   }
 
   responseApi = (authResponse) => {
-    window.FB.api('/me', { locale: this.props.language, fields: this.props.fields }, (me) => {
+    window.FB.api('/me', { fields: this.props.fields }, (me) => {
       Object.assign(me, authResponse);
       this.props.callback(me);
     });
@@ -151,9 +141,7 @@ class FacebookLogin extends React.Component {
     if (response.authResponse) {
       this.responseApi(response.authResponse);
     } else {
-      if (this.props.onFailure) {
-        this.props.onFailure({ status: response.status });
-      } else {
+      if (this.props.callback) {
         this.props.callback({ status: response.status });
       }
     }
@@ -167,18 +155,15 @@ class FacebookLogin extends React.Component {
     }
   };
 
-  click = (e) => {
+  click = () => {
     if (!this.state.isSdkLoaded || this.state.isProcessing || this.props.isDisabled) {
       return;
     }
     this.setState({ isProcessing: true });
-    const { scope, appId, onClick, reAuthenticate, redirectUri, disableMobileRedirect } = this.props;
+    const { scope, appId, onClick, reAuthenticate, redirectUri, disableMobileRedirect, responseType } = this.props;
 
     if (typeof onClick === 'function') {
-      onClick(e);
-      if (e.defaultPrevented) {
-        return;
-      }
+      onClick();
     }
 
     const params = {
@@ -186,6 +171,7 @@ class FacebookLogin extends React.Component {
       redirect_uri: redirectUri,
       state: 'facebookdirect',
       scope,
+      response_type: responseType
     };
 
     if (reAuthenticate) {
@@ -219,10 +205,6 @@ class FacebookLogin extends React.Component {
   render() {
     const { cssClass, size, icon, textButton, typeButton, buttonStyle } = this.props;
     const isIconString = typeof icon === 'string';
-    const optionalProps = {};
-    if (this.props.isDisabled && _shouldAddDisabledProp(this.props.tag)) {
-      optionalProps.disabled = true;
-    }
     return (
       <span style={ this.containerStyle() }>
         {isIconString && (
@@ -236,7 +218,6 @@ class FacebookLogin extends React.Component {
           className={`${cssClass} ${size}`}
           style={ buttonStyle }
           onClick={this.click}
-          {...optionalProps}
         >
           {icon && isIconString && (
             <i className={`fa ${icon}`}></i>
